@@ -1,0 +1,9 @@
+site,rack,a_device,a_port,z_device,z_port,cable_type
+DEN1,R12,rtr1,Eth1/1,spine1,Ethernet1/1,SM-LC
+DEN1,R12,rtr1,ethernet1/2,spine2,Eth1/1,SM-LC
+DEN1,R12,spine1,Ethernet1/49,leaf1,Ethernet1/49,MM-MPO
+DEN1,R14,spine2,Eth1/49,leaf2,Eth1/49,MM-MPO
+DEN1,R14,leaf2,Eth1/50,spine1,et1/49,MM-MPO
+DEN1,R14,leaf3,Ethernet1/49,,Ethernet1/49,MM-MPO
+SEA2,R03,rtr7,Eth1/1,spine9,Eth1/1,SM-LC
+SEA2,R03,spine9,Eth1/49,leaf9,Eth1/49,DAC

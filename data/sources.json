@@ -1,0 +1,15 @@
+{
+  "authority": {
+    "rack": "dcim",
+    "a_port": "design",
+    "z_port": "design",
+    "optic_part": "supply_chain",
+    "trunk_strand": "fiber_records"
+  },
+  "sources": {
+    "design":        {"a_port": "Ethernet1/1", "z_port": "Ethernet1/1", "rack": "R12"},
+    "dcim":          {"rack": "R14"},
+    "supply_chain":  {"optic_part": "QSFP28-100G-LR4"},
+    "fiber_records": {"trunk_strand": "T7-F03", "z_port": "Ethernet1/2"}
+  }
+}
