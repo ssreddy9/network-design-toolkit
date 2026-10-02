@@ -1,0 +1,13 @@
+# Made-up sample data in the shape of a RAN alarm feed
+2026-09-14T08:01:10 | DEN-0412 | RU-1 | CRITICAL | Link down to DU-1
+2026-09-14T08:01:12 | DEN-0412 | RU-2 | CRITICAL | Link down to DU-1
+2026-09-14T08:01:15 | DEN-0412 | RU-3 | CRITICAL | Link down to DU-1
+2026-09-14T08:01:40 | DEN-0412 | RU-1 | CRITICAL | Link down to DU-1
+2026-09-14T08:02:05 | DEN-0412 | DU-1 | MAJOR    | Fronthaul port Ethernet1/3 errors
+2026-09-14T08:05:00 | DEN-0388 | RU-2 | MINOR    | VSWR high on antenna port 2
+2026-09-14T08:05:30 | DEN-0388 | RU-2 | MINOR    | VSWR high on antenna port 2
+2026-09-14T08:06:00 | DEN-0388 | RU-2 | MINOR    | VSWR high on antenna port 2
+2026-09-14T08:10:00 | DEN-0501 | CU-1 | WARNING  | NTP offset above threshold
+2026-09-14T08:12:00 | DEN-0501 | RU-4 | MAJOR    | Cell disabled
+this line is garbage
+2026-09-14T08:13:00 | DEN-0501 | RU-5 | BLOCKER  | unknown severity

@@ -104,5 +104,45 @@ class TestPaths(unittest.TestCase):
         self.assertEqual(fewest_hops(self.graph, "A", "A"), ["A"])
 
 
+
+from netdesign.alarms import collapse_repeats, parse_alarm_line, parse_log, probable_upstream, site_summary
+
+LOG = """# comment
+2026-09-14T08:01:10 | DEN-1 | RU-1 | CRITICAL | Link down
+2026-09-14T08:01:12 | DEN-1 | RU-2 | critical | Link down
+2026-09-14T08:01:40 | DEN-1 | RU-1 | CRITICAL | Link down
+2026-09-14T08:05:00 | DEN-2 | RU-1 | MINOR | VSWR high
+bad line
+2026-09-14T08:06:00 | DEN-2 | RU-1 | NOPE | unknown severity
+"""
+TOPO = {("DEN-1", "RU-1"): "DU-1", ("DEN-1", "RU-2"): "DU-1", ("DEN-2", "RU-1"): "DU-1"}
+
+
+class TestAlarms(unittest.TestCase):
+    def test_parse_skips_bad_lines(self):
+        alarms, bad = parse_log(LOG)
+        self.assertEqual(len(alarms), 4)
+        self.assertEqual(bad, [6, 7])
+
+    def test_severity_normalized(self):
+        self.assertEqual(parse_alarm_line("2026-09-14T08:01:12 | den-1 | ru-2 | critical | x")["severity"], "CRITICAL")
+
+    def test_collapse_counts_repeats(self):
+        alarms, _ = parse_log(LOG)
+        collapsed = {(a["site"], a["node"]): a["count"] for a in collapse_repeats(alarms)}
+        self.assertEqual(collapsed[("DEN-1", "RU-1")], 2)
+
+    def test_probable_upstream(self):
+        alarms, _ = parse_log(LOG)
+        self.assertEqual(probable_upstream(alarms, TOPO), [("DEN-1", "DU-1", ["RU-1", "RU-2"])])
+
+    def test_minor_alarms_do_not_trigger_upstream(self):
+        alarms, _ = parse_log(LOG)
+        self.assertEqual(probable_upstream(alarms, TOPO, min_rus=1)[-1][0], "DEN-1")
+
+    def test_site_summary_worst_first(self):
+        alarms, _ = parse_log(LOG)
+        self.assertEqual([r[0] for r in site_summary(alarms)], ["DEN-1", "DEN-2"])
+
 if __name__ == "__main__":
     unittest.main()

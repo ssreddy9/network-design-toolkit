@@ -15,6 +15,7 @@ Standard library only (Python 3.9+). The sample data in `data/` is made up.
 | `diff` | Planned BOM vs installed inventory: what's missing and what's extra |
 | `reconcile` | Merges one record from several source systems using field ownership |
 | `trace` | Fewest-hop and lowest-loss path through panels, trunks and splices, with a loss budget check |
+| `triage` | Summarizes a RAN alarm log: collapses repeats, ranks sites by severity, and flags a likely DU or transport cause when several radios alarm together |
 
 ## Run it
 
@@ -51,6 +52,21 @@ Loss budget 2.0 dB: within
 
 The shortest path isn't always the best one. Here the direct trunk has a lossy segment, so the route through the meet-me room has less total loss.
 
+```
+$ python cli.py triage data/alarms.log data/ran_topology.csv
+10 alarms -> 7 after collapsing repeats (2 unreadable lines: [12, 13])
+
+Sites, worst first:
+  DEN-0412   CRITICAL  CRITICAL 4, MAJOR 1
+  DEN-0501   MAJOR     MAJOR 1, WARNING 1
+  DEN-0388   MINOR     MINOR 3
+
+Probable upstream cause (several RUs alarming under one DU):
+  DEN-0412 DU-1: RU-1, RU-2, RU-3 -> check DU-1 and its fronthaul/transport first
+```
+
+The triage command comes from NOC work: when three radios at one site go down at the same moment, the radios are rarely the problem. The shared DU or its fronthaul link usually is, so that's where to look first.
+
 ## Design choices
 
 - **Collect every error, don't stop at the first.** Whoever fixes the data should see all of it in one pass.
@@ -67,6 +83,7 @@ netdesign/
   bom.py        BOM per site, planned vs installed
   reconcile.py  merge by field ownership
   paths.py      fewest-hop and lowest-loss path
+  alarms.py     RAN alarm parsing, de-duplication, upstream-cause hints
 cli.py          command-line entry point
 tests/          unit tests
 data/           sample data

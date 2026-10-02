@@ -6,12 +6,14 @@ Examples:
     python cli.py diff data/connections.csv --optics data/optics.json --installed data/installed.json
     python cli.py reconcile data/sources.json
     python cli.py trace data/fiber_links.csv rtr1:Ethernet1/1 spine1:Ethernet1/1
+    python cli.py triage data/alarms.log data/ran_topology.csv
 """
 
 import argparse
 import csv
 import sys
 
+from netdesign.alarms import SEVERITY_RANK, collapse_repeats, parse_log, probable_upstream, site_summary
 from netdesign.bom import bom_by_site, build_bom, compare_inventory
 from netdesign.checks import duplicate_ports, missing_fields, unknown_cable_types
 from netdesign.paths import build_graph, fewest_hops, lowest_loss
@@ -110,6 +112,34 @@ def cmd_trace(args):
     return 0
 
 
+def cmd_triage(args):
+    with open(args.log, encoding="utf-8") as f:
+        alarms, bad = parse_log(f.read())
+    with open(args.topology, newline="", encoding="utf-8") as f:
+        ru_to_du = {(r["site"].upper(), r["ru"].upper()): r["du"].upper() for r in csv.DictReader(f)}
+
+    collapsed = collapse_repeats(alarms)
+    print(f"{len(alarms)} alarms -> {len(collapsed)} after collapsing repeats"
+          + (f" ({len(bad)} unreadable lines: {bad})" if bad else ""))
+
+    print("\nSites, worst first:")
+    for site, worst, counts in site_summary(alarms):
+        detail = ", ".join(f"{k} {v}" for k, v in sorted(counts.items()))
+        print(f"  {site:<10} {worst:<9} {detail}")
+
+    print("\nProbable upstream cause (several RUs alarming under one DU):")
+    upstream = probable_upstream(alarms, ru_to_du)
+    for site, du, rus in upstream:
+        print(f"  {site} {du}: {', '.join(rus)} -> check {du} and its fronthaul/transport first")
+    if not upstream:
+        print("  none")
+
+    print("\nCollapsed alarms:")
+    for a in sorted(collapsed, key=lambda a: (-SEVERITY_RANK[a["severity"]], a["site"], a["node"])):
+        print(f"  {a['severity']:<9} {a['site']} {a['node']:<5} x{a['count']}  {a['text']}")
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Pre-deployment checks for network build data")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -140,6 +170,11 @@ def main(argv=None):
     p.add_argument("end")
     p.add_argument("--budget", type=float, help="maximum allowed loss in dB")
     p.set_defaults(func=cmd_trace)
+
+    p = sub.add_parser("triage", help="summarize a RAN alarm log and point at likely upstream causes")
+    p.add_argument("log")
+    p.add_argument("topology")
+    p.set_defaults(func=cmd_triage)
 
     args = parser.parse_args(argv)
     return args.func(args)
